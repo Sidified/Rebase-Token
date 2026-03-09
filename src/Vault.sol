@@ -33,7 +33,7 @@ contract Vault {
      * @notice Redeem rebase tokens from the user and send the user ETH
      * @param _amount The amount of tokens to be redeemed
      */
-    function redeemm(uint256 _amount) external {
+    function redeem(uint256 _amount) external {
         // 1. Burn the token from the user
         i_rebaseToken.burn(msg.sender, _amount);
         // 2. Send the user ETH equal to the amount of tokens burned

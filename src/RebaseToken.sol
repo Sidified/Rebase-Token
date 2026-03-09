@@ -74,7 +74,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @param _user The address of the user
      * @return The principle balance of the user
      */
-    function principleBlanceOf(address _user) external view returns (uint256) {
+    function principalBalanceOf(address _user) external view returns (uint256) {
         return super.balanceOf(_user);
     }
 
@@ -85,7 +85,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      *
      */
     function mint(address _to, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
-        _mintAccruedInteresr(_to);
+        _mintAccruedInterest(_to);
         s_userInterestRates[_to] = s_interestRate;
         _mint(_to, _amount);
 
@@ -101,7 +101,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
         if (_amount == type(uint256).max) {
             _amount = balanceOf(_from);
         }
-        _mintAccruedInteresr(_from);
+        _mintAccruedInterest(_from);
         _burn(_from, _amount);
     }
 
@@ -124,8 +124,8 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @return True if the transfer is successful, false otherwise
      */
     function transfer(address _recipient, uint256 _amount) public override returns (bool) {
-        _mintAccruedInteresr(msg.sender);
-        _mintAccruedInteresr(_recipient);
+        _mintAccruedInterest(msg.sender);
+        _mintAccruedInterest(_recipient);
         if (_amount == type(uint256).max) {
             _amount = balanceOf(msg.sender);
         }
@@ -143,8 +143,8 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @return True if the transfer is successful, false otherwise
      */
     function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
-        _mintAccruedInteresr(_sender);
-        _mintAccruedInteresr(_recipient);
+        _mintAccruedInterest(_sender);
+        _mintAccruedInterest(_recipient);
         if (_amount == type(uint256).max) {
             _amount = balanceOf(_sender);
         }
@@ -180,7 +180,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @notice Mint the accrued interest to the user since the last time they interacted with the protocol (e.g. burn, mint, transfer)
      * @param _user The address of the user
      */
-    function _mintAccruedInteresr(address _user) internal {
+    function _mintAccruedInterest(address _user) internal {
         // (1) find their current balance of rebase tokens that have been minted to the user -> principle balance
         uint256 previousPrincipleBalance = super.balanceOf(_user);
         // (2) calculate their current balance including any interest -> balanceOf
