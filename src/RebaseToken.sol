@@ -62,7 +62,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      */
     function setInterestRate(uint256 _newInterestRate) external onlyOwner {
         // Set the interest rate
-        if (_newInterestRate > s_interestRate) {
+        if (_newInterestRate >= s_interestRate) {
             revert RebaseToken__InterestRateCanOnlyDecrease(s_interestRate, _newInterestRate);
         }
         s_interestRate = _newInterestRate;
@@ -74,7 +74,7 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @param _user The address of the user
      * @return The principle balance of the user
      */
-    function principalBalanceOf(address _user) external view returns (uint256) {
+    function principleBalanceOf(address _user) external view returns (uint256) {
         return super.balanceOf(_user);
     }
 
@@ -98,9 +98,6 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @param _amount The amount of tokens to be burned
      */
     function burn(address _from, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
-        if (_amount == type(uint256).max) {
-            _amount = balanceOf(_from);
-        }
         _mintAccruedInterest(_from);
         _burn(_from, _amount);
     }
