@@ -144,9 +144,12 @@ contract RebaseTokenTest is Test {
 
     function test_cannotPerformMintOrBurnIfNotGrantedAccess() public {
         uint256 amount = 1e5;
-        vm.prank(user); // even the owner cannot mint or burn if they have not been granted access, only the vault has been granted access in this case
+
+        uint256 rate = rebaseToken.getInterestRateOfUser(user);
+
+        vm.prank(user);
         vm.expectPartialRevert(IAccessControl.AccessControlUnauthorizedAccount.selector);
-        rebaseToken.mint(user, amount);
+        rebaseToken.mint(user, amount, rate);
 
         vm.prank(owner);
         vm.expectPartialRevert(IAccessControl.AccessControlUnauthorizedAccount.selector);

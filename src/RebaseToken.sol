@@ -84,9 +84,9 @@ contract RebaseToken is ERC20, Ownable, AccessControl {
      * @param _amount The amount of tokens to be minted
      *
      */
-    function mint(address _to, uint256 _amount) external onlyRole(MINT_AND_BURN_ROLE) {
+    function mint(address _to, uint256 _amount, uint256 _userInterestRate) external onlyRole(MINT_AND_BURN_ROLE) {
         _mintAccruedInterest(_to);
-        s_userInterestRates[_to] = s_interestRate;
+        s_userInterestRates[_to] = _userInterestRate;
         _mint(_to, _amount);
 
         // AI gave this suggestio -> To be 100% precise, most devs would mint the interest first, then check for the "Max" flag to ensure the balanceOf calculation is acting on the most up-to-date state.
