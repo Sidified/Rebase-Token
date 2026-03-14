@@ -306,7 +306,36 @@ Possible extensions:
 
 # Author
 
-Sid
+Siddharth Choudhary -
 Blockchain Developer
 
-Building in public while mastering **Solidity, DeFi, and cross-chain infrastructure**.
+Focused on **Smart contract development, and blockchain infrastructure**.
+
+---
+
+## 🤝 Connect & Collaborate
+
+I'm actively seeking opportunities to contribute to Web3 projects and collaborate with other developers. Whether you're:
+- 👨‍💼 A company looking for smart contract developers
+- 🎓 A learner wanting to discuss these concepts
+- 🛠️ A developer interested in collaboration
+- 🔍 A recruiter evaluating technical skills
+
+**Let's connect!**
+
+- 💼 **LinkedIn:** [Siddharth Choudhary](https://www.linkedin.com/in/siddharth-choudhary-797391215/)
+- 🐦 **Twitter:** [Sid_Hary_](https://x.com/Sid_Hary_)
+- 📧 **Email:** sidforwork46@gmail.com
+
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## 🤝 Acknowledgements
+
+* **Cyfrin Updraft** for the foundational knowledge.
+---
+
+**Made with ❤️ using Foundry and Chainlink**
+
