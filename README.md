@@ -1,139 +1,312 @@
-# Rebase Token (Foundry)
+# Cross-Chain Rebase Token (CCIP)
 
-This repository documents my journey learning advanced DeFi smart contract engineering using **Foundry** and **Cyfrin's Advanced Foundry course**.
+A **cross-chain rebasing token protocol** built with **Solidity, Foundry, and Chainlink CCIP**.
 
-## Concept
+This project demonstrates how a rebasing token can maintain its **interest-accruing mechanics across multiple blockchains** while being bridged using **Chainlink Cross-Chain Interoperability Protocol (CCIP)**.
 
-This project implements a **Rebase Token** that dynamically increases user balances over time based on an interest rate.
+The system allows users to:
 
-Instead of updating balances every block (which would be extremely expensive in gas), the protocol overrides the `balanceOf()` function to compute the balance dynamically.
+* Deposit ETH into a vault
+* Receive rebasing tokens
+* Earn interest over time
+* Bridge the token across chains
+* Preserve their interest rate on the destination chain
 
-The balance is calculated as:
-
-```
-Dynamic Balance =
-(principalBalance * growthFactor) / PRECISION_FACTOR
-```
-
-Where
-
-```
-growthFactor = PRECISION_FACTOR + (userInterestRate * timeElapsed)
-```
-
-This allows balances to grow over time without constant state updates.
+This repository documents the **entire engineering process**, from rebasing token mechanics to cross-chain deployment automation.
 
 ---
 
-## Architecture
+# Architecture Overview
 
-The protocol consists of two main contracts.
+The protocol consists of several core components.
 
-### 1️⃣ RebaseToken.sol
+### 1. RebaseToken
 
-ERC20 token that:
+An ERC20 token whose balances **grow over time**.
 
-• accrues interest over time
-• overrides `balanceOf()` to return a dynamically increasing balance
-• crystallizes interest before transfers/mints/burns
-• uses role-based access control for minting and burning
+Instead of updating balances continuously on-chain, the token:
 
-Key concepts implemented:
+* Stores the **principal balance**
+* Calculates the **effective balance dynamically**
+* Mints accumulated interest only when users interact with the protocol
 
-* dynamic rebasing math
-* time-based interest accumulation
-* interest crystallization
-* role based access control (AccessControl)
-* owner controlled global interest rate
+Key concept:
+
+```
+balance = principal × growthFactor
+```
+
+Where:
+
+```
+growthFactor = 1 + (interestRate × timeElapsed)
+```
+
+This allows balances to grow **without constant state updates**, keeping gas costs low.
 
 ---
 
-### 2️⃣ Vault.sol
+### 2. Vault
 
-The Vault is the entry and exit point for users.
+The vault is the **entry point of the protocol**.
 
-Users can:
+Users deposit ETH into the vault and receive Rebase Tokens.
 
-Deposit ETH → receive Rebase Tokens
-Redeem Rebase Tokens → receive ETH
+Responsibilities:
+
+* Accept ETH deposits
+* Mint rebasing tokens
+* Burn tokens during withdrawals
+* Send ETH back to users
 
 Flow:
 
 ```
 User deposits ETH
-        ↓
-Vault receives ETH
-        ↓
-Vault calls mint() on RebaseToken
-        ↓
-User receives rebase tokens
-```
-
-When redeeming:
-
-```
-User burns tokens
-        ↓
-Vault sends ETH
+↓
+Vault mints RebaseToken
+↓
+User earns rebasing interest
+↓
+User redeems tokens for ETH
 ```
 
 ---
 
-## Key DeFi Design Challenges
+### 3. RebaseTokenPool (CCIP)
 
-### Dynamic Balance Calculation
+The CCIP token pool enables **cross-chain transfers** of the rebasing token.
 
-Balances grow with time without needing constant state updates.
+The pool performs:
 
-### Interest Crystallization
+* **Burn tokens on source chain**
+* **Mint tokens on destination chain**
+* **Transfer user interest rate metadata**
 
-Before any state-changing action:
+This ensures the rebasing mechanics remain **consistent across chains**.
 
-* transfer
-* mint
-* burn
+---
 
-The contract mints the pending interest to keep balances accurate.
+# Cross-Chain Design
 
-### Token Dust Problem
-
-When users try to withdraw their full balance, tiny residual amounts may remain due to continuous interest accumulation.
-
-The protocol solves this using:
+Source Chain (Example: Ethereum Sepolia)
 
 ```
-type(uint256).max
+RebaseToken
+Vault
+RebaseTokenPool
 ```
 
-Which signals "withdraw everything".
+Destination Chain (Example: Arbitrum / ZKsync)
+
+```
+RebaseToken
+RebaseTokenPool
+```
+
+The vault only exists on the **source chain**, because users deposit native assets there.
 
 ---
 
-## Security Considerations
+# Cross-Chain Transfer Flow
 
-Access control is implemented using:
-
-OpenZeppelin
-
-* Ownable
-* AccessControl
-
-Only approved protocol contracts (like the Vault) can mint or burn tokens.
-
----
-
-## Status
-
-🚧 Work in progress
-
-This repository is part of my **learning journey into advanced DeFi smart contract development**.
-
-More updates will be added as the implementation progresses.
+1. User deposits ETH into the Vault
+2. Vault mints Rebase Tokens
+3. User initiates CCIP transfer
+4. Tokens are burned on the source chain
+5. A CCIP message is sent
+6. Tokens are minted on the destination chain
+7. The user's **interest rate is preserved**
 
 ---
 
-## Tech Stack
+# CCIP Message Structure
 
-- Solidity
-- Foundry
-- OpenZeppelin
+The transfer is executed using the `EVM2AnyMessage` structure.
+
+```
+Client.EVM2AnyMessage
+```
+
+Key fields:
+
+* receiver
+* tokenAmounts
+* feeToken
+* extraArgs
+
+The CCIP router then routes the message across chains.
+
+---
+
+# Project Structure
+
+```
+src/
+ ├─ RebaseToken.sol
+ ├─ Vault.sol
+ ├─ RebaseTokenPool.sol
+ └─ Interfaces/
+
+script/
+ ├─ Deployer.s.sol
+ ├─ ConfigurePool.s.sol
+ └─ BridgeTokens.s.sol
+
+test/
+ ├─ RebaseToken.t.sol
+ └─ CrossChainTest.t.sol
+```
+
+---
+
+# Foundry Scripts
+
+The project includes deployment automation using Foundry scripts.
+
+### TokenAndPoolDeployer
+
+Deploys:
+
+* RebaseToken
+* RebaseTokenPool
+
+Registers the token with the CCIP Token Admin Registry.
+
+---
+
+### VaultDeployer
+
+Deploys the vault and grants it mint/burn permissions.
+
+---
+
+### ConfigurePoolScript
+
+Links pools across chains using:
+
+```
+applyChainUpdates()
+```
+
+This opens the CCIP communication lane.
+
+---
+
+### BridgeTokensScript
+
+Executes a cross-chain transfer.
+
+Steps:
+
+1. Construct CCIP message
+2. Calculate oracle fee
+3. Approve LINK for fee payment
+4. Approve token transfer
+5. Call `ccipSend`
+
+---
+
+# Testing
+
+The project uses **Foundry for testing and simulations**.
+
+Testing includes:
+
+* rebasing math validation
+* vault deposit and redemption
+* transfer mechanics
+* interest rate inheritance
+* cross-chain message simulation
+* multi-chain fork testing
+
+Example:
+
+```
+forge test
+```
+
+---
+
+# Running the Project
+
+Install dependencies:
+
+```
+forge install
+```
+
+Build contracts:
+
+```
+forge build
+```
+
+Run tests:
+
+```
+forge test
+```
+
+Run cross-chain simulations:
+
+```
+forge test --match-test test_bridgeAllTokens
+```
+
+---
+
+# Key Concepts Demonstrated
+
+This project demonstrates:
+
+* Rebasing token mechanics
+* Lazy interest minting
+* Vault based DeFi primitives
+* Cross-chain token pools
+* CCIP messaging
+* Multi-chain fork testing
+* Foundry deployment scripting
+* Token admin registry integration
+
+---
+
+# Tech Stack
+
+* Solidity
+* Foundry
+* Chainlink CCIP
+* OpenZeppelin
+* Forge testing framework
+
+---
+
+# Learning Goals
+
+This project was built as part of a deep dive into:
+
+* advanced DeFi primitives
+* cross-chain interoperability
+* protocol deployment pipelines
+* production-grade smart contract development
+
+---
+
+# Future Improvements
+
+Possible extensions:
+
+* frontend interface
+* interest rate governance
+* liquidity rewards
+* oracle-based dynamic interest rates
+* multi-asset vault support
+
+---
+
+# Author
+
+Sid
+Blockchain Developer
+
+Building in public while mastering **Solidity, DeFi, and cross-chain infrastructure**.
